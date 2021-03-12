@@ -35,8 +35,21 @@ x_train, y_train = np.array(x_train), np.array(y_train)
 x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
 
 #TODO: Build Model
+
+#! 序貫模型市多個網路層的線性堆疊(so called, 一路走到黑)，把它想像成一個管道，一端輸入原始資料而另一端輸出預測結果。傳統上sequential中每層layer是和上一層相聯絡的
 model = Sequential()
 
+#! 通過.add方法一個個將layer加入模型中
+'''
+Sequential的第一層需要接收引述來倔任資料型態、
+1.長短期記憶(LSTM,Long Short-Term Memory)是遞歸神經網路(RNN,Recurrent Neural Network)的其中一種
+units: 指定數量
+return_sequence: 若為true則返回整個序列，否則僅返回輸出序列的最後一個值
+input_shape: 指定輸入之維度(dimension)
+2.丟棄法(Dropout)是一個對抗過擬和(overfitting)的正則化法，在訓練時每一次的迭代(epoch)皆以一定的機率丟棄隱藏層神經元，輸入的數值(小數點)為丟棄神經元的百分比
+e.g. 此處為0.2即為丟棄20%的神經元
+3.全連接層(Dense)，用來對對上一層的神經元進行全部連接，實現特徵的非線性組合
+'''
 model.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
 model.add(Dropout(0.2))
 model.add(LSTM(units=50, return_sequences=True))
@@ -45,7 +58,22 @@ model.add(LSTM(units=50))
 model.add(Dropout(0.2))
 model.add(Dense(units=1)) #* Prediction of the next closing value
 
+#! compile training model
+'''
+1.optimizer: 優化器，此處使用Adam(Adaptive Moment Estimation)作為優化器，是Momentum+RMSprop的強化版
+最常見的優化演算法是經典的隨機梯度下降演算法(SGD)
+2.loss: 損失函式，此處使用均方誤差(MSE, mean squared error)
+'''
 model.compile(optimizer='adam', loss='mean_squared_error')
+
+#! 訓練模型一般使用fit函式
+'''
+.fit(輸入資料,標籤,batch_size,epochs)
+1.輸入資料: 若模型只有一個輸入，那麼x的型別是numpy array，若模型有多個輸入，那麼x的型別應當為list，list的元素是對應於各個輸入的numpy array
+2.標籤: numpy array，通常為y值(實際結果)
+3.batch_size: 批數，指定進行梯度下降時每個batch包含的樣本數，訓練時一個batch的樣本會被計算一次梯度下降，使目標函式優化一步
+4.epochs: 迭代，訓練終止時的epoch值，訓練將在到達該epoch值時停止，當沒有initial_epoch時，它就是訓練的總輪數
+'''
 model.fit(x_train, y_train, epochs=25, batch_size=32)
 
 #? Test the model accuracy on existing data
