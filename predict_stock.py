@@ -35,11 +35,12 @@ x_train, y_train = np.array(x_train), np.array(y_train)
 x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
 
 #TODO: Build Model
+#? model is a functon set
 
 #! 序貫模型市多個網路層的線性堆疊(so called, 一路走到黑)，把它想像成一個管道，一端輸入原始資料而另一端輸出預測結果。傳統上sequential中每層layer是和上一層相聯絡的
 model = Sequential()
 
-#! 通過.add方法一個個將layer加入模型中
+#! 通過.add方法一個個將layer (function)加入模型中
 '''
 Sequential的第一層需要接收引述來倔任資料型態、
 1.長短期記憶(LSTM,Long Short-Term Memory)是遞歸神經網路(RNN,Recurrent Neural Network)的其中一種
