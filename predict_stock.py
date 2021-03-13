@@ -1,5 +1,6 @@
 import numpy as np  
 import matplotlib.pyplot as plt
+from numpy.lib.type_check import real
 import pandas as pd
 #pd.core.is_list_like = pd.api.types.is_list_like
 import pandas_datareader as web
@@ -10,7 +11,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM
 
 #TODO: Load Data
-company = '2330.TW'
+company = 'btc-usd'
 
 start = dt.datetime(2012,1,1)
 end = dt.datetime(2020,1,1)
@@ -44,19 +45,21 @@ model = Sequential()
 '''
 Sequential的第一層需要接收引述來倔任資料型態、
 1.長短期記憶(LSTM,Long Short-Term Memory)是遞歸神經網路(RNN,Recurrent Neural Network)的其中一種
-units: 指定數量
-return_sequence: 若為true則返回整個序列，否則僅返回輸出序列的最後一個值
-input_shape: 指定輸入之維度(dimension)
+[units]: 指定數量(神經元數量)
+[return_sequence]: 若為true則返回整個序列，否則僅返回輸出序列的最後一個值
+[input_shape]: 指定輸入之維度(dimension)，LSTM輸入必為三維資料(分別為batch,time steps,input data)。
+batch為訓練過程中一次輸入的資料筆數(x值)，time step為資料的時間維度(若股票要藉由前30天資料預測則time step為30)(y值)，input data為單獨一個時間的資料(z值)
+e.g. https://ithelp.ithome.com.tw/articles/10214405
 2.丟棄法(Dropout)是一個對抗過擬和(overfitting)的正則化法，在訓練時每一次的迭代(epoch)皆以一定的機率丟棄隱藏層神經元，輸入的數值(小數點)為丟棄神經元的百分比
 e.g. 此處為0.2即為丟棄20%的神經元
 3.全連接層(Dense)，用來對對上一層的神經元進行全部連接，實現特徵的非線性組合
 '''
-model.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
-model.add(Dropout(0.2))
-model.add(LSTM(units=50, return_sequences=True))
-model.add(Dropout(0.2))
+model.add(LSTM(units=70, return_sequences=True, input_shape=(x_train.shape[1], 1)))
+model.add(Dropout(0.25))
+model.add(LSTM(units=60, return_sequences=True))
+model.add(Dropout(0.25))
 model.add(LSTM(units=50))
-model.add(Dropout(0.2))
+#model.add(Dropout(0.25))
 model.add(Dense(units=1)) #* Prediction of the next closing value
 
 #! compile training model
@@ -75,7 +78,7 @@ model.compile(optimizer='adam', loss='mean_squared_error')
 3.batch_size: 批數，指定進行梯度下降時每個batch包含的樣本數，訓練時一個batch的樣本會被計算一次梯度下降，使目標函式優化一步
 4.epochs: 迭代，訓練終止時的epoch值，訓練將在到達該epoch值時停止，當沒有initial_epoch時，它就是訓練的總輪數
 '''
-model.fit(x_train, y_train, epochs=25, batch_size=32)
+model.fit(x_train, y_train, epochs=50, batch_size=32)
 
 #? Test the model accuracy on existing data
 
@@ -101,14 +104,16 @@ for x in range(prediction_days, len(model_inputs)+1): # ! +1 will include the pr
     x_test.append(model_inputs[x-prediction_days:x, 0])
 
 x_test = np.array(x_test)
+print('x_test: \n',x_test)
 x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+print('x_test reshape: \n',x_test)
 
 predicted_prices = model.predict(x_test)
 predicted_prices = scaler.inverse_transform(predicted_prices)
 
 #TODO: plot the test prediction
 plt.plot(actual_prices, color='black', label=f'Actual {company} Price')
-plt.plot(predicted_prices, color='green', label=f'Predicted {company} Price')
+plt.plot(predicted_prices, color='red', label=f'Predicted {company} Price')
 plt.title(f'{company} Share Price')
 plt.xlabel('Time')
 plt.ylabel(f'{company} Share Price')
@@ -118,8 +123,14 @@ plt.show()
 #TODO: Predict next day
 real_data = [model_inputs[len(model_inputs) + 1 - prediction_days:len(model_inputs+1), 0]]
 real_data = np.array(real_data)
+print('real_data: \n',real_data)
 real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
+print('real_data reshape: \n',real_data)
 
 prediction = model.predict(real_data)
 prediction = scaler.inverse_transform(prediction)
+if prediction[0]<total_dataset[-1]:
+    print('Predict tendency: Price go Lower')
+else:
+    print('Predict tendency: Price go higher')
 print(f'Prediction of next day\'s closing value: {prediction}')
