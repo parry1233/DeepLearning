@@ -11,7 +11,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM
 
 #TODO: Load Data
-company = 'btc-usd'
+company = '2330.tw'
 
 start = dt.datetime(2012,1,1)
 end = dt.datetime(2020,1,1)
@@ -23,7 +23,7 @@ data = web.DataReader(company, 'yahoo', start, end)
 scaler = MinMaxScaler(feature_range=(0,1))
 scaled_data = scaler.fit_transform(data['Close'].values.reshape(-1,1))
 
-prediction_days = 60
+prediction_days = 30
 
 x_train=[]
 y_train=[]
@@ -54,12 +54,11 @@ e.g. https://ithelp.ithome.com.tw/articles/10214405
 e.g. 此處為0.2即為丟棄20%的神經元
 3.全連接層(Dense)，用來對對上一層的神經元進行全部連接，實現特徵的非線性組合
 '''
-model.add(LSTM(units=70, return_sequences=True, input_shape=(x_train.shape[1], 1)))
-model.add(Dropout(0.25))
-model.add(LSTM(units=60, return_sequences=True))
-model.add(Dropout(0.25))
-model.add(LSTM(units=50))
+model.add(LSTM(units=200, return_sequences=True, input_shape=(x_train.shape[1], 1)))
 #model.add(Dropout(0.25))
+model.add(LSTM(units=200, return_sequences=True))
+#model.add(Dropout(0.25))
+model.add(LSTM(units=200))
 model.add(Dense(units=1)) #* Prediction of the next closing value
 
 #! compile training model
@@ -78,7 +77,7 @@ model.compile(optimizer='adam', loss='mean_squared_error')
 3.batch_size: 批數，指定進行梯度下降時每個batch包含的樣本數，訓練時一個batch的樣本會被計算一次梯度下降，使目標函式優化一步
 4.epochs: 迭代，訓練終止時的epoch值，訓練將在到達該epoch值時停止，當沒有initial_epoch時，它就是訓練的總輪數
 '''
-model.fit(x_train, y_train, epochs=50, batch_size=32)
+model.fit(x_train, y_train, epochs=60, batch_size=32)
 
 #? Test the model accuracy on existing data
 
@@ -111,6 +110,7 @@ print('x_test reshape: \n',x_test)
 predicted_prices = model.predict(x_test)
 predicted_prices = scaler.inverse_transform(predicted_prices)
 
+
 #TODO: plot the test prediction
 plt.plot(actual_prices, color='black', label=f'Actual {company} Price')
 plt.plot(predicted_prices, color='red', label=f'Predicted {company} Price')
@@ -129,7 +129,9 @@ print('real_data reshape: \n',real_data)
 
 prediction = model.predict(real_data)
 prediction = scaler.inverse_transform(prediction)
-if prediction[0]<total_dataset[-1]:
+print('today\'s closed price:', total_dataset[-1])
+print('today\'s predicted closing price:', predicted_prices[-1])
+if prediction[0]<predicted_prices[-1]:
     print('Predict tendency: Price go Lower')
 else:
     print('Predict tendency: Price go higher')
