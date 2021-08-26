@@ -9,11 +9,15 @@ import datetime as dt
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM
+import tensorflow as tf
 
 def dataInitialize(dataInput):
     api_data = dataInput
 
 def modelTrain(code):
+
+    sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(log_device_placement=True))
+
     #TODO: Load Data
     company = code
 
@@ -145,6 +149,7 @@ def model_predict(model,model_inputs,scaler,prediction_days,last_predictPrice,to
 
 userIn = 1
 model,model_inputs,scaler,prediction_days,last_predictPrice,today_closing_price = None,None,None,None,None,None
+print(tf.__version__)
 while(userIn!=-1):
     print('Chooseing:\n(1) Model Train\n(2) Model Predict\n(-1) Exit')
     userIn = int(input())
