@@ -9,7 +9,25 @@ import datetime as dt
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, LSTM
+
+from tensorflow.compat.v1 import ConfigProto, InteractiveSession
+import os
+
 import tensorflow as tf
+
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+session = InteractiveSession(config=config)
+'''
+os.environ["CUDA_VISIBLE_DEVICES"] = '0' #use GPU with ID=0
+config = ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.5 # maximun alloc gpu50% of MEM
+config.gpu_options.allow_growth = True #allocate dynamically
+sess = tf.Session(config = config)
+'''
+
+print('GPU: ',tf.test.is_gpu_available())
+print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
 def dataInitialize(dataInput):
     api_data = dataInput
@@ -130,11 +148,11 @@ def modelTrain(code):
 
 def model_predict(model,model_inputs,scaler,prediction_days,last_predictPrice,today_closing_price):
     #TODO: Predict next day
-    real_data = [model_inputs[len(model_inputs) + 1 - prediction_days:len(model_inputs+1), 0]]
+    real_data = [model_inputs[len(model_inputs) - prediction_days:len(model_inputs), 0]]
     real_data = np.array(real_data)
     #print('real_data: \n',real_data)
     real_data = np.reshape(real_data, (real_data.shape[0], real_data.shape[1], 1))
-    #print('real_data reshape: \n',real_data)
+    print('real_data reshape: \n',real_data)
 
     prediction = model.predict(real_data)
     prediction = scaler.inverse_transform(prediction)
